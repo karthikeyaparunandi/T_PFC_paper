@@ -1,6 +1,6 @@
 '''
 copyright @ Karthikeya S Parunandi - karthikeyasharma91@gmail.com
-python class for T-PFC method.
+python class for T-LQR method.
 '''
 #!/usr/bin/env python
 from __future__ import division
@@ -11,7 +11,7 @@ import numpy as np
 #from rrt_planning import plan
 
 
-class T_PFC(object):
+class T_LQR(object):
 
 	def __init__(self, n_x, n_u, horizon, initial_state, final_state, control_upper_bound, control_lower_bound):
 
@@ -50,18 +50,18 @@ class T_PFC(object):
 		self.u_lb = control_lower_bound
 		self.u_ub = control_upper_bound
 
-		# initialize the execution time of t_pfc algorithm 
-		self.t_pfc_execution_time  = 0
+		# initialize the execution time of t_lqr algorithm 
+		self.t_lqr_execution_time  = 0
 
 
-	def run_t_pfc(self):
+	def run_t_lqr(self):
 
 		start_time = time.time()
 		self.define_partial_func()
 		self.initialize_traj()
 		self.solve_OCP()
 		self.backward_pass()
-		self.t_pfc_execution_time = time.time() - start_time
+		self.t_lqr_execution_time = time.time() - start_time
 		#print(self.X_0, self.X_o[0][0][0],self.cost(self.X_0, self.X_o[0][0][0]))
 
 	def solve_OCP(self):
@@ -117,12 +117,10 @@ class T_PFC(object):
 		self.U_o = [np.reshape(sol.value(self.U[l]), (self.n_u, 1)) for l in range(0, self.N)]
 
 
-	def backward_pass(self,):
+	def backward_pass(self):
 
-		R =  self.l_uu(self.X_o[self.N-2], self.U_o[self.N-1])
-
-		G = self.l_x_f(self.X_o[self.N-1]) 
-		P = self.l_xx_f(self.X_o[self.N-1]) 
+		R =  self.W_u_LQR	#self.l_uu(self.X_o[self.N-2], self.U_o[self.N-1])
+		P = self.W_x_LQR_f	#0.5*self.l_xx_f(self.X_o[self.N-1]) 
 
 
 		for t in range(self.N-1, 0, -1):
@@ -132,20 +130,12 @@ class T_PFC(object):
 
 			S = R + mtimes( mtimes(B_o.T, P), B_o)
 
-			# T-PFC gain 
+			# LQR gain 
 			self.K_o[t-1] = -mtimes(inv(S), mtimes( mtimes(B_o.T, P), A_o))	
 			
-			# first and second order equations
-			F_xx = self.f_xx(self.X_o[t-1], self.U_o[t])
+			# second order equation
 
-			Tensor_product_term = mtimes(G, F_xx[0:self.n_x,0:self.n_x])
-
-			for p in range(1, self.n_x):
-				Tensor_product_term = vertcat(Tensor_product_term, mtimes(G, F_xx[self.n_x*p:self.n_x*(p+1),0:self.n_x]))
-
-			P = DM(self.l_xx(self.X_o[t-1], self.U_o[t]))  +  mtimes(mtimes(A_o.T, P), A_o) - mtimes(mtimes(self.K_o[t-1].T, S), self.K_o[t-1]) + Tensor_product_term #+\
-						 #np.tensordot(G, np.reshape(self.f_xx(self.X_o[t-1], self.U_o[t]), (self.n_x,self.n_x,self.n_x)), axes=(1,1))[0] 
-			G = self.l_x(self.X_o[t-1], self.U_o[t]) + mtimes(G, A_o)
+			P = self.W_x_LQR  +  mtimes(mtimes(A_o.T, P), A_o) - mtimes(mtimes(self.K_o[t-1].T, S), self.K_o[t-1]) 
 
 
 

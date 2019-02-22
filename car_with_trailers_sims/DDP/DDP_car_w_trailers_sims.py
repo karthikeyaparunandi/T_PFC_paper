@@ -6,15 +6,15 @@ python code for simulations on car-like robot using T-PFC method.
 from __future__ import division
 import h5py
 from casadi import *
-from DDP_car import DDP_car
+from DDP_car_w_trailers import DDP_car_w_trailers
 import matplotlib.pyplot as plt
 import numpy as np
-import car_sims.params as params
+import car_with_trailers_sims.params as params
 
 
-#Initial state
-X_0 = DM([0, 0, 0, 0]) # Initial state
-x_g = DM([5.0, 5.0, 0, 0]) # goal state
+#Initial position
+X_0 = DM([0, 0, 0, 0, 0, 0]) # Initial state
+x_g = DM([5.0, 6.0, 0, 0, 0, 0]) # goal state
 
 #state dimension
 n_x = params.n_x
@@ -28,18 +28,18 @@ control_lower_bound = DM([params.r_u[1], params.r_w[1]])
 
 
 #use DDP class
-ddp = DDP_car(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
+ddp = DDP_car_w_trailers(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
 
 
 #perform ddp iterations
 ddp.iterate_ddp()
 
 ddp.plot_position()
-
-
+print(ddp.K)
+'''
 #initialize the scaling factor for noise
 epsilon = 0
-epsilon_max = 0.15
+epsilon_max = 0.1
 
 #delta - increment in epsilon for sims
 delta = .005
@@ -64,11 +64,11 @@ while epsilon <= epsilon_max:
 
 			if t==0:
 
-				X_t[t] = ddp.car_like_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
+				X_t[t] = ddp.car_w_trailers_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
 
 			else:
 
-				X_t[t] = ddp.car_like_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
+				X_t[t] = ddp.car_w_trailers_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
 
 
 		cost = ddp.calculate_total_cost(X_0, X_t, U_t, horizon)			
@@ -80,3 +80,4 @@ while epsilon <= epsilon_max:
 		dataset = f.create_dataset("{}".format(epsilon), data=cost_array)
 			
 	epsilon += delta
+'''

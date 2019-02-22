@@ -215,7 +215,7 @@ class DDP(object):
 
 			if t == 0:
 
-				self.U_p[t] =self.U_p_temp[t] + self.alpha*self.k[t]
+				self.U_p[t] = self.U_p_temp[t] + self.alpha*self.k[t]
 								 
 				self.X_p[t] = self.dynamics_propagation_d(self.X_p_0, self.U_p[t])
 

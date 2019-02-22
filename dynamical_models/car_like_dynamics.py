@@ -34,9 +34,9 @@ class car_like(object):
 
 		return 	x_next
 
-	def car_like_dynamics_propagation_d_noisy(self, x, u, sigma_factor):
+	def car_like_dynamics_propagation_d_noisy(self, x, u, epsilon):
 		# process noise added to dynamics
-		w = sigma_factor*np.random.normal(0.0, 1.0, 4)
+		w = epsilon*np.random.normal(0.0, 1.0, 4)
 
 		x_next = blockcat([[x[0]+ self.dt*cos(x[2])*u[0] + np.sqrt(self.dt)*w[0]], [x[1] + self.dt*sin(x[2])*u[0]+ np.sqrt(self.dt)*w[1]], [x[2] + ((u[0]*tan(x[3])*self.dt)/self.L)+ np.sqrt(self.dt)*w[2]], \
 				[x[3] + self.dt*u[1]+ np.sqrt(self.dt)*w[3]]])
