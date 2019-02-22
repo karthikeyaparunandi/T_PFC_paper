@@ -10,9 +10,9 @@ import brewer2mpl
 t_pfc = 'car_sims/T_PFC/cost_data.hdf5' 
 ddp = 'car_sims/DDP/cost_data.hdf5'
 t_lqr = 'car_sims/T_LQR/cost_data.hdf5'
-
-# car with trailers
 '''
+# car with trailers
+
 t_pfc = 'car_with_trailers_sims/T_PFC/cost_data.hdf5' 
 ddp = 'car_with_trailers_sims/DDP/cost_data.hdf5'
 t_lqr = 'car_with_trailers_sims/T_LQR/cost_data.hdf5'
@@ -23,9 +23,10 @@ cost_std_tpfc = []
 epsilons_t_pfc = []
 
 f = h5py.File(t_pfc,'r+')
+prune = u'055'
 
 for key in f.keys():
-	if key < u'0.14':
+	if key < u'0.13':
 		data = f[key]
 		if key == u'0':
 			nominal = np.mean(data.value)
@@ -35,12 +36,11 @@ for key in f.keys():
 			cost_mean_tpfc.append(np.mean(data.value)/nominal)
 			cost_std_tpfc.append(np.std(data.value)/nominal)
 		
-		if key == u'0.125':
+		if key == prune:
 			for i in range(len(data.value)):
-				if data[i] > 1e+6:
+				if data[i] > 2e+60:
 					data[i] = data[i-1]
-	
-print(f[u'0.125'].value)
+
 f.close()
 
 
@@ -64,11 +64,11 @@ for key in f.keys():
 			cost_mean_ddp.append(np.mean(data.value)/nominal)
 			cost_std_ddp.append(np.std(data.value)/nominal)
 		
-		if key == u'0.105':
+		if key == prune:
 			
 			for i in range(len(data.value)):
-				if data[i] > 1e+70:
-					data[i] = data[i-1]         
+				if data[i] > 1e+6:
+					data[i] = data[i]         
 		
 
 f.close()
@@ -95,13 +95,12 @@ for key in f.keys():
 			cost_mean_tlqr.append(np.mean(data.value)/nominal)
 			cost_std_tlqr.append(np.std(data.value)/nominal)
 		
-		if key == u'0.11':
+		if key == prune:
 			for i in range(len(data.value)):
 				if data[i] > 1e+60:
 					print("hi")
-					#data[i] = 1e+8#2*data[i-2]
-	
-	
+					data[i] = data[i]
+
 
 
 f.close()
@@ -118,6 +117,7 @@ print(J_vec[0])
 # brewer2mpl.get_map args: set name  set type  number of colors
 bmap = brewer2mpl.get_map('Set2', 'qualitative', 7)
 colors = bmap.mpl_colors
+#mpl.pyplot.figure(dpi=600)
 
 params = {
    'axes.labelsize': 10,
@@ -126,10 +126,11 @@ params = {
    'xtick.labelsize': 10,
    'ytick.labelsize': 10,
    'text.usetex': False,
-   'figure.figsize': [5, 3] # instead of 4.5, 4.5
+   'figure.figsize': [4, 3], # instead of 4.5, 4.5
+   'font.weight': 'bold',
    }
+   
 mpl.rcParams.update(params)
-
 # T-PFC
 plt.plot(epsilons_t_pfc, cost_mean_tpfc, linewidth=2,color=colors[0] )
 plt.fill_between(epsilons_t_pfc, np.array(cost_mean_tpfc)+np.array(cost_std_tpfc), np.array(cost_mean_tpfc)-np.array(cost_std_tpfc), alpha=0.35, linewidth=0, color=colors[0])
@@ -146,10 +147,11 @@ plt.fill_between(epsilons_t_lqr, np.array(cost_mean_tlqr)+np.array(cost_std_tlqr
 plt.grid(axis='y', color="0.9", linestyle='-', linewidth=1)
 
 #MPC
-J_vec = np.append(J_vec, np.zeros(5,))
+print(epsilons_ddp)
 plt.plot(epsilons_ddp, J_vec/J_vec[0], linewidth=2, color=colors[3])
-#plt.fill_between(eps.tolist(), (J_vec + J_std)/J_vec[0], (J_vec - J_std)/J_vec[0], alpha=0.25, linewidth=0, color=colors[3])
+plt.fill_between(epsilons_ddp, (J_vec + J_std)/J_vec[0], (J_vec - J_std)/J_vec[0], alpha=0.3, linewidth=0, color=colors[3])
 plt.grid(axis='y', color="0.9", linestyle='-', linewidth=1)
+plt.grid(axis='x', color="0.9", linestyle='-', linewidth=1)
 
 print(epsilons_t_pfc, eps.tolist())
 plt.legend(['T-PFC', 'ILQG', 'T-LQR', 'MPC'])
@@ -157,15 +159,11 @@ plt.legend(['T-PFC', 'ILQG', 'T-LQR', 'MPC'])
 
 plt.xlabel('$\epsilon$')
 plt.ylabel('Cost incurred (nominal scaled to 1)')
+
 locs, labs = plt.xticks()
 
 plt.xticks( np.arange(0, 70, step=4))
-#plt.plot(cost_mean_ddp)
-#plt.fill_between(np.array(cost_mean_ddp)+np.array(cost_std_ddp), np.array(cost_mean_ddp), alpha=0.1, facecolor='green')
-#plt.plot(np.array(cost_mean_ddp)+np.array(cost_std_ddp))
-#plt.plot(np.array(cost_mean_ddp)-np.array(cost_std_ddp))
-#plt.plot(cost_mean_tlqr)
-
+#
 #plt.legend("Cost mean of DDP","Cost mean of T-PFC")
 
 plt.show()

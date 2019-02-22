@@ -1,19 +1,19 @@
 '''
 copyright @ Karthikeya S Parunandi - karthikeyasharma91@gmail.com
-python code for simulations on car-like robot using T-LQR method.
+python code for simulations on car-like robot using T-lqr method.
 '''
 #!/usr/bin/env python
 from __future__ import division
 import h5py
 from casadi import *
-from T_LQR_car_w_trailers import T_LQR_car_w_trailers
+from T_LQR_car import T_LQR_car
 import matplotlib.pyplot as plt
 import numpy as np
-import car_with_trailers_sims.params as params
+import car_sims.params as params
 
-#Initial position
-X_0 = DM([0, 0, 0, 0, 0, 0]) # Initial state
-x_g = DM([5.0, 6.0, 0, 0, 0, 0]) # goal state
+#Initial state
+X_0 = DM([0, 0, 0, 0]) # Initial state
+x_g = DM([5.0, 5.0, 0, 0]) # goal state
 
 #state dimension
 n_x = params.n_x
@@ -25,8 +25,8 @@ horizon = params.horizon
 control_upper_bound = DM([params.r_u[0], params.r_w[0]])
 control_lower_bound = DM([params.r_u[1], params.r_w[1]])
 
-#use the T_LQR class
-t_lqr = T_LQR_car_w_trailers(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
+#use the T_lqr class
+t_lqr = T_LQR_car(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
 
 # execute the algorithm
 t_lqr.run_t_lqr()
@@ -36,13 +36,14 @@ t_lqr.plot_position(t_lqr.X_o)
 
 '''
 #save the trajectory
-f = open('TLQR_no_limit.txt','a')
+f = open('Tlqr_no_limit.txt','a')
 for i in range(len(t_lqr.X_p)):
 	f.write(str(t_lqr.X_o[i][0][0])+ '\t'+ str(t_lqr.X_o[i][1][0]) + '\t' + str(t_lqr.X_o[i][2][0]) + '\t' + str(t_lqr.X_o[i][3][0])+'\t'+ str(t_lqr.U_o[i][0][0])+'\t'+ str(t_lqr.U_o[i][1][0])+'\n')
 f.close()
 '''
 
 #initialize the scaling factor for noise
+
 epsilon = 0
 epsilon_max = 0.1
 
@@ -70,11 +71,11 @@ while epsilon <= epsilon_max:
 
 			if t==0:
 
-				X_t[t] = t_lqr.car_w_trailers_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
+				X_t[t] = t_lqr.car_like_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
 
 			else:
 
-				X_t[t] = t_lqr.car_w_trailers_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
+				X_t[t] = t_lqr.car_like_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
 
 
 		cost = t_lqr.calculate_total_cost(X_0, X_t, U_t, horizon)			

@@ -1,15 +1,16 @@
 '''
 copyright @ Karthikeya S Parunandi - karthikeyasharma91@gmail.com
-python code for simulations on car-like robot using T-LQR method.
+python code for simulations on car-like robot using T-PFC method.
 '''
 #!/usr/bin/env python
 from __future__ import division
 import h5py
 from casadi import *
-from T_LQR_car_w_trailers import T_LQR_car_w_trailers
+from DDP_car_w_trailers import DDP_car_w_trailers
 import matplotlib.pyplot as plt
 import numpy as np
 import car_with_trailers_sims.params as params
+
 
 #Initial position
 X_0 = DM([0, 0, 0, 0, 0, 0]) # Initial state
@@ -25,23 +26,17 @@ horizon = params.horizon
 control_upper_bound = DM([params.r_u[0], params.r_w[0]])
 control_lower_bound = DM([params.r_u[1], params.r_w[1]])
 
-#use the T_LQR class
-t_lqr = T_LQR_car_w_trailers(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
 
-# execute the algorithm
-t_lqr.run_t_lqr()
-
-t_lqr.plot_position(t_lqr.X_o)
+#use DDP class
+ddp = DDP_car_w_trailers(n_x, n_u, horizon, X_0, x_g, control_upper_bound, control_lower_bound, params.dt)
 
 
+#perform ddp iterations
+ddp.iterate_ddp()
+
+ddp.plot_position()
+print(ddp.K)
 '''
-#save the trajectory
-f = open('TLQR_no_limit.txt','a')
-for i in range(len(t_lqr.X_p)):
-	f.write(str(t_lqr.X_o[i][0][0])+ '\t'+ str(t_lqr.X_o[i][1][0]) + '\t' + str(t_lqr.X_o[i][2][0]) + '\t' + str(t_lqr.X_o[i][3][0])+'\t'+ str(t_lqr.U_o[i][0][0])+'\t'+ str(t_lqr.U_o[i][1][0])+'\n')
-f.close()
-'''
-
 #initialize the scaling factor for noise
 epsilon = 0
 epsilon_max = 0.1
@@ -53,8 +48,7 @@ delta = .005
 n_sims = 100
 
 #creating trajectory variables to store the entire trajectory
-X_t, U_t = t_lqr.create_traj_variables_DM()
-
+X_t, U_t = ddp.create_traj_variables_DM()
 
 while epsilon <= epsilon_max:
 
@@ -66,18 +60,18 @@ while epsilon <= epsilon_max:
 		for t in range(0, horizon):
 
 			#apply the controller
-			U_t[t] = t_lqr.U_o[t] + (0 if t==0 else 1) * mtimes(t_lqr.K_o[t-1], (X_t[t-1] - t_lqr.X_o[t-1]))
+			U_t[t] = ddp.U_p[t] + (0 if t==0 else 1) * mtimes(ddp.K[t-1], (X_t[t-1] - ddp.X_p[t-1]))
 
 			if t==0:
 
-				X_t[t] = t_lqr.car_w_trailers_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
+				X_t[t] = ddp.car_w_trailers_dynamics_propagation_d_noisy(X_0, U_t[0], epsilon)
 
 			else:
 
-				X_t[t] = t_lqr.car_w_trailers_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
+				X_t[t] = ddp.car_w_trailers_dynamics_propagation_d_noisy(X_t[t-1], U_t[t], epsilon)
 
 
-		cost = t_lqr.calculate_total_cost(X_0, X_t, U_t, horizon)			
+		cost = ddp.calculate_total_cost(X_0, X_t, U_t, horizon)			
 
 		cost_array.append(cost)
 
@@ -86,6 +80,4 @@ while epsilon <= epsilon_max:
 		dataset = f.create_dataset("{}".format(epsilon), data=cost_array)
 			
 	epsilon += delta
-
-
-
+'''
