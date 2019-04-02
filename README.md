@@ -18,4 +18,4 @@ To run the examples, set your $PYTHONPATH to T_PFC_paper folder. If you are usin
 Examples:
 - Car-like robot
 - Car-like robot with trailers attached
-- Manipulator
+- Quadrotor
