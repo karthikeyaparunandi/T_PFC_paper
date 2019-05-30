@@ -1,5 +1,5 @@
-# T_PFC_paper
-Trajectory optimized perturbation feedback controller
+# T_PFC
+Trajectory-optimized perturbation feedback controller
 
 Libraries needed:
 - Casadi (for symbolic differentiation and optimization- also comes with 'ipopt' optimization library)
