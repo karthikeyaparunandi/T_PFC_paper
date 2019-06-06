@@ -6,7 +6,7 @@ Libraries needed:
 - h5py
 - ROS
 
-Implementations:
+Algorithm Implementations:
 - T-PFC
 - DDP
 - T-LQR
